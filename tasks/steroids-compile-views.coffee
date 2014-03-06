@@ -3,6 +3,8 @@ chalk = require "chalk"
 fs = require "fs"
 path = require "path"
 
+try jade = require "jade"
+
 module.exports = (grunt)->
 
   grunt.registerTask "steroids-compile-views", "Compile views", ->
@@ -51,7 +53,7 @@ module.exports = (grunt)->
 
         resourceDirName = filePathPart.split("/").splice(-2,1)[0]
 
-        buildFilePath = path.join(buildDirectory, "views", resourceDirName, path.basename(filePathPart))
+        buildFilePath = path.join(buildDirectory, "views", resourceDirName, path.basename(filePathPart).replace(/\.jade$/, ".html"))
 
         # skip "partial" files that begin with underscore
         if /^_/.test path.basename(filePath)
@@ -67,8 +69,13 @@ module.exports = (grunt)->
             warningMessage = "#{chalk.red("Warning:")} There is no controller for resource "#{controllerName}".  Add file app/controllers/#{controllerName}.{js|coffee}"
             grunt.log.writeln warningMessage
 
+          view = grunt.file.read(filePath, "utf8")
+
+          if jade and path.extname(filePath) == ".jade"
+            view = jade.compile(view)()
+
           yieldObj =
-            view: grunt.file.read(filePath, "utf8")
+            view: view
             controller: controllerName
 
           # put layout+yields together
